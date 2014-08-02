@@ -1,6 +1,5 @@
-# budget
-
-FIXME
+# Budget
+Budget tracking software. Just want something about at complex as a piece of paper and a pen.
 
 ## Prerequisites
 
