@@ -5,7 +5,8 @@
             [hiccup.middleware :refer [wrap-base-url]]
             [compojure.handler :as handler]
             [compojure.route :as route]
-            [budget.routes.home :refer [home-routes]]))
+            [budget.routes.home :refer [home-routes]])
+  (:use [hiccup.bootstrap.middleware]))
 
 (defn init []
   (println "budget is starting"))
@@ -18,8 +19,7 @@
   (route/not-found "Not Found"))
 
 (def app
-  (-> (routes home-routes app-routes)
-      (handler/site)
-      (wrap-base-url)))
-
-
+  (wrap-bootstrap-resources
+   (-> (routes home-routes app-routes)
+       (handler/site)
+       (wrap-base-url))))
