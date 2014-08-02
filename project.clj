@@ -6,7 +6,9 @@
                  [hiccup "1.0.5"]
                  [ring-server "0.3.1"]
                  [cheshire "5.3.1"]
-                 [hiccup-bootstrap-3 "0.2.0-SNAPSHOT"]]
+                 [hiccup-bootstrap-3 "0.2.0-SNAPSHOT"]
+                 [org.clojure/java.jdbc "0.2.3"]
+                 [org.xerial/sqlite-jdbc "3.7.2"]]
   :plugins [[lein-ring "0.8.10"]]
   :ring {:handler budget.handler/app
          :init budget.handler/init
