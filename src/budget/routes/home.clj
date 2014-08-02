@@ -26,7 +26,7 @@
                                          :min 0} "subtract")]
                           [:br]
                           [:br]
-                          (submit-button {:class "btn btn-primary"} "Submit"))))
+                          (submit-button {:class "btn btn-primary btn-large btn-block"} "Submit"))))
 
 (defn update-amount [add subtract]
   (cond
