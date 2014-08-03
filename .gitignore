@@ -12,3 +12,4 @@ pom.xml
 *.sq3
 .lein-repl-history
 .nrepl-port
+*.log
