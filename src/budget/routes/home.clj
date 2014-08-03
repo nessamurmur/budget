@@ -1,8 +1,10 @@
 (ns budget.routes.home
   (:require [compojure.core :refer :all]
-            [budget.views.layout :as layout]
+            [budget.layout :as layout]
             [hiccup.form :refer :all]
-            [budget.models.db :as sql]))
+            [budget.models.db :as sql]
+            [budget.util :as util]))
+
 
 (defn home [& [flash-message total]]
   (layout/common [:h1 "Monthly Budget"]

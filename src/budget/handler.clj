@@ -1,28 +1,68 @@
 (ns budget.handler
-  (:require [compojure.core :refer [defroutes routes]]
-            [ring.middleware.resource :refer [wrap-resource]]
-            [ring.middleware.file-info :refer [wrap-file-info]]
-            [hiccup.middleware :refer [wrap-base-url]]
-            [compojure.handler :as handler]
-            [compojure.route :as route]
+  (:require [compojure.core :refer [defroutes]]
             [budget.routes.home :refer [home-routes]]
-            [budget.models.db :as db :refer [create-transactions-table]])
+            [budget.middleware :refer [load-middleware]]
+            [budget.session-manager :as session-manager]
+            [budget.models.db :as db]
+            [noir.response :refer [redirect]]
+            [noir.util.middleware :refer [app-handler]]
+            [compojure.route :as route]
+            [taoensso.timbre :as timbre]
+            [taoensso.timbre.appenders.rotor :as rotor]
+            [selmer.parser :as parser]
+            [environ.core :refer [env]]
+            [cronj.core :as cronj])
   (:use [hiccup.bootstrap.middleware]))
-
-(defn init []
-  (println "budget is starting")
-  (if-not (.exists (java.io.File. "./transactions.sq3"))
-    (db/create-transactions-table)))
-
-(defn destroy []
-  (println "budget is shutting down"))
 
 (defroutes app-routes
   (route/resources "/")
   (route/not-found "Not Found"))
 
-(def app
-  (wrap-bootstrap-resources
-   (-> (routes home-routes app-routes)
-       (handler/site)
-       (wrap-base-url))))
+(defn init
+  "init will be called once when
+   app is deployed as a servlet on
+   an app server such as Tomcat
+   put any initialization code here"
+  []
+  (timbre/set-config!
+    [:appenders :rotor]
+    {:min-level :info
+     :enabled? true
+     :async? false ; should be always false for rotor
+     :max-message-per-msecs nil
+     :fn rotor/appender-fn})
+
+  (timbre/set-config!
+    [:shared-appender-config :rotor]
+    {:path "budget.log" :max-size (* 512 1024) :backlog 10})
+
+  (if (env :dev) (parser/cache-off!))
+  ;;start the expired session cleanup job
+  (cronj/start! session-manager/cleanup-job)
+  (if-not (.exists (java.io.File. "./transactions.sq3"))
+    (db/create-transactions-table))
+  (timbre/info "budget started successfully"))
+
+(defn destroy
+  "destroy will be called when your application
+   shuts down, put any clean up code here"
+  []
+  (timbre/info "budget is shutting down...")
+  (cronj/shutdown! session-manager/cleanup-job)
+  (timbre/info "shutdown complete!"))
+
+(def app (wrap-bootstrap-resources
+          (app-handler
+           ;; add your application routes here
+           [home-routes app-routes]
+           ;; add custom middleware here
+           :middleware (load-middleware)
+           ;; timeout sessions after 30 minutes
+           :session-options {:timeout (* 60 30)
+                             :timeout-response (redirect "/")}
+           ;; add access rules here
+           :access-rules []
+           ;; serialize/deserialize the following data formats
+           ;; available formats:
+           ;; :json :json-kw :yaml :yaml-kw :edn :yaml-in-html
+           :formats [:json-kw :edn])))
